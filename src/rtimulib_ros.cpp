@@ -27,6 +27,10 @@
 #include <RTIMULib.h>
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
+#include <sensor_msgs/MagneticField.h>
+
+static const double G_TO_MPSS = 9.80665;
+#define uT_2_T 1000000
 
 int main(int argc, char **argv)
 {
@@ -34,6 +38,7 @@ int main(int argc, char **argv)
     ROS_INFO("Imu driver is running");
     ros::NodeHandle n;
     ros::Publisher imu_pub = n.advertise<sensor_msgs::Imu>("imu/data", 1);
+    ros::Publisher magnetometer_pub_ = n.advertise<sensor_msgs::MagneticField>("imu_mag", 1);
 
     std::string path_calib_file;
     n.getParam("/rtimulib_node/calibration_file_path", path_calib_file);
@@ -71,6 +76,7 @@ int main(int argc, char **argv)
     while (ros::ok())
     {
         sensor_msgs::Imu imu_msg;
+        sensor_msgs::MagneticField imu_mage_msg;
 
         if (imu->IMURead())
         {
@@ -89,6 +95,15 @@ int main(int argc, char **argv)
             imu_msg.linear_acceleration.z = imu_data.accel.z();
 
             imu_pub.publish(imu_msg);
+
+            imu_mage_msg.header.frame_id=frame_id;
+            imu_mage_msg.header.stamp=ros::Time::now();
+
+            imu_mage_msg.magnetic_field.x = imu_data.compass.x()/uT_2_T;
+            imu_mage_msg.magnetic_field.y = imu_data.compass.y()/uT_2_T;
+            imu_mage_msg.magnetic_field.z = imu_data.compass.z()/uT_2_T;
+
+            magnetometer_pub_.publish(imu_mage_msg);
         }
         ros::spinOnce();
     }
