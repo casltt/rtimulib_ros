@@ -28,6 +28,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/MagneticField.h>
+#include <IMUDrivers/RTIMUBNO055.h>
 
 static const double G_TO_MPSS = 9.80665;
 #define uT_2_T 1000000
@@ -63,7 +64,10 @@ int main(int argc, char **argv)
     }
 
     // Initialise the imu object
-    imu->IMUInit();
+    if(!imu->IMUInit()){
+        ROS_ERROR("Imu Init Failed");
+        return 0;
+    }
 
     // Set the Fusion coefficient
     imu->setSlerpPower(0.02);
@@ -78,7 +82,7 @@ int main(int argc, char **argv)
         sensor_msgs::Imu imu_msg;
         sensor_msgs::MagneticField imu_mage_msg;
 
-        if (imu->IMURead())
+        if (imu->IMURead() == true)
         {
             RTIMU_DATA imu_data = imu->getIMUData();
             imu_msg.header.stamp = ros::Time::now();
